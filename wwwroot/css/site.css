@@ -1,0 +1,153 @@
+html {
+  font-size: 12px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+  background-color: #79a5d2;
+}
+
+a {
+  text-decoration: none;
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px; /* Space between text and icon */
+}
+
+  a img {
+    width: 16px;
+    height: 16px;
+    margin-inline-end: 5px;
+  }
+
+.btn-red {
+  color: #fff;
+  background-color: #880642;
+  border-color: #880642;
+}
+
+.btn-blue {
+  color: #fff;
+  background-color: #014165;
+  border-color: #014165;
+}
+
+.btn-yellow {
+  color: #fff;
+  background-color: #ffe500;
+  border-color: #ffe500;
+}
+
+
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-family: Arial, sans-serif;
+}
+
+    .pagination button {
+        padding: 5px 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background-color: #79a5d2;
+        cursor: pointer;
+    }
+
+        .pagination button:disabled {
+            background-color: #e0e0e0;
+            cursor: not-allowed;
+        }
+
+    .pagination .page-numbers {
+        display: flex;
+        gap: 5px;
+    }
+
+        .pagination .page-numbers span {
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+            .pagination .page-numbers span.active {
+                background-color: #007bff;
+                color: white;
+                font-weight: bold;
+            }
+
+            .pagination .page-numbers span:hover:not(.active) {
+                background-color: #ddd;
+            }
+
+.button-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0px;
+}
+
+.left-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.right-button {
+    /* No additional styles needed for alignment */
+}
+
+fieldset {
+    border: 2px solid #014165;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.left-container {
+    display: flex;
+    justify-content: flex-start;
+    align-content: space-between;
+    width: 40%;
+    padding-right: 1em;
+}
+
+.right-container {
+    display: flex;
+    justify-content: flex-end;
+    align-content: space-between;
+    width: 40%;
+    padding-left: 1em;
+}
+
+legend {
+    font-size: 1.2em;
+    color: #007bff;
+    padding: 0 10px;
+}
+
+fieldset label {
+    display: block;
+    margin-top: 0.4em;
+    font-weight: bold;
+}
+
+fieldset input {
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}

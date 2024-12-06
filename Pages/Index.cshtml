@@ -1,0 +1,150 @@
+﻿@page
+@using TestWebApp.Services;
+@model IndexModel
+@{
+  ViewData["Title"] = "Home page";
+}
+@inject SalesOrderService SalesOrderService
+
+
+<style>
+
+
+  /*
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+   */
+</style>
+@*
+<div class="text-center">
+  <h1 class="display-4">Welcome</h1>
+  <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+</div>
+ *@
+
+<form method="post">
+
+  <fieldset>
+    <div style="display: flex; align-content: space-between;">
+      <div class="left-container">
+        <label for="keyWord" style="width: 30%">Keywords:</label>
+        <input type="text" id="keyWord" name="keyWord" asp-for="SearchParameter.Keyword"
+               class="form-control" style="width: 70%">
+      </div>
+
+      <div style ="display: flex; align-content: space-between; width: 20%">
+        &nbsp;
+      </div>
+
+      <div class="right-container">
+        <label for="orderDate" style="width: 30%">Order Date:</label>
+        <input type="date" id="orderDate" name="orderDate" asp-for="SearchParameter.OrderDate"
+               class="form-control" style="width: 70%">
+      </div>
+    </div>
+
+    <div class="right-container" style="align-content: stretch;width: 100%">
+      <button class="btn btn-blue" name="action" value="search">Search</button>
+    </div>
+    @*
+    <div style="display: flex; align-content: space-between;">
+    <div class="left-container">
+    </div>
+    </div>
+    *@
+  </fieldset>
+
+  <div class="button-row">
+    <!-- Left buttons -->
+    <div class="left-buttons">
+      <a asp-page="./OrderTransaction" asp-route-id="0" class="btn btn-red">Add New Data</a>
+      <a asp-page="./OrderTransaction" class="btn btn-blue">
+        <img src="~/excel.png" alt="Home Icon">Export To Excel
+      </a>
+    </div>
+
+    <!-- Right button -->
+    <div class="right-button">
+      <a asp-page="./OrderTransaction" class="btn btn-yellow">
+        <img src="~/edit.png" alt="Home Icon">Hints
+      </a>
+    </div>
+  </div>
+</form>
+
+<form method="get">
+  <div style="max-height: 60%; overflow-y: auto; border: 1px solid #ccc;">
+    <table class="table" style="background-color: #fff">
+      <thead style="color: #fff; background-color: #002a5c">
+        <tr>
+          <th>No</th>
+          <th>Action</th>
+          <th>Sales Order</th>
+          <th>Order Date</th>
+          <th>Customer</th>
+        </tr>
+      </thead>
+      <tbody>
+        @foreach (var order in SalesOrderService.GetAll())
+        {
+          <tr>
+            <td>@order.No</td>
+            <td>
+              <a asp-page="./OrderTransaction" asp-route-id="@order.Id">
+                <img src="~/edit.png" alt="Home Icon">
+              </a>
+              <a asp-page="./DeleteOrder" asp-route-id="@order.Id">
+                <img src="~/delete.png" alt="Delete">
+              </a>
+            </td>
+
+            <td>@order.OrderNumber</td>
+            <td>@order.OrderDate.ToString("dd/MM/yyyy")</td>
+            <td>@order.CustomerName</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="button-row">
+    <div class="left-container">
+      <div class="pagination">
+        <button id="first" name="action" value="first">
+          <img src="~/first.png" alt="Icon">
+        </button>
+        <button id="previous" name="action" value="previous" onclick="goPrevious()">
+          <img src="~/prev.png" alt="Icon">
+        </button>
+
+        <div class="page-numbers" id="pageNumbers" style="font-weight: bold">@Model.Pagination.Page</div>
+
+        <button id="next" name="action" value="next" onclick="goNext()">
+          <img src="~/next.png" alt="Icon">
+        </button>
+        <button id="last" name="action" value="last" onclick="goLast()">
+          <img src="~/last.png" alt="Icon">
+        </button>
+      </div>
+    </div>
+
+    <div class="right-container">
+      <span>@((Model.Pagination.Page - 1) * Model.Pagination.PageLength + 1)
+        - @((Model.Pagination.Page - 1) * Model.Pagination.PageLength + Model.Pagination.RowCount)
+          of @Model.Pagination.TotalRowCount</span>
+    </div>
+
+  </div>
+</form>
+

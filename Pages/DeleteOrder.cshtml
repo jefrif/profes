@@ -1,0 +1,25 @@
+﻿@page "{id}"
+@using TestWebApp.Services;
+@model TestWebApp.Pages.DeleteOrderModel
+@{
+}
+
+@inject SalesOrderService SalesOrderService
+
+<div style="display: grid; place-items: center">
+  <h1>Remove Sales Order</h1><br /><br />
+
+  <form method="post">
+    <div style="font-size: larger; font-weight: bold; color: crimson; text-align: center">
+      <span>WARNING: Sales Order Will Be Removed!</span>
+    </div>
+
+    <div class="right-container" style="align-content: stretch;width: 100%; margin-top: 5rem">
+      <button type="submit" class="btn btn-primary" style="width: 10rem">Save</button>
+      <a asp-page="./Index" class="btn btn-secondary" style="margin-left: 1rem; width: 10rem">Back</a>
+    </div>
+
+  </form>
+
+
+</div>
