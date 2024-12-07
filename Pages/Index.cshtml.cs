@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Azure;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System;
 using System.Diagnostics;
@@ -11,12 +12,12 @@ namespace TestWebApp.Pages
   {
     private readonly ILogger<IndexModel> _logger;
     private readonly SalesOrderService _salesOrderService;
-    public string SessionPage { get; private set; }
+    private readonly Dictionary<string, int> _session = new Dictionary<string, int>();
 
     [BindProperty]
     public SearchParameter SearchParameter { get; set; } = new SearchParameter();
 
-    [BindProperty]
+    [BindProperty(SupportsGet = true)]
     public Pagination Pagination { get; set; }
     
     [BindProperty(SupportsGet = true)]
@@ -27,27 +28,29 @@ namespace TestWebApp.Pages
       _logger = logger;
       _salesOrderService = service;
       Pagination = new Pagination();
-      SessionPage = "1";
+      _session["Page"] = 1;
     }
 
     public void OnGet(string action)
     {
-      SessionPage = HttpContext.Session.GetString("page") ?? "1";
+      int page = Int32.Parse(HttpContext.Session.GetString("page") ?? "1");
+      int totalRowCount = Int32.Parse(HttpContext.Session.GetString("totalRowCount") ?? "0");
+      int pageCount = totalRowCount / 10 + (totalRowCount % 10 > 0 ? 1 : 0);
       ExcelReady = false;
-      Debug.WriteLine($"OnGet: SessionPage={SessionPage}");
+      Debug.WriteLine($"OnGet: _session={totalRowCount}");
 
       switch (action)
       {
         case "first":
           Debug.WriteLine("first was clicked.");
-          int page = 1;
+          page = 1;
           HttpContext.Session.SetString("page", page.ToString());
           Pagination.Page = page;
           break;
 
         case "previous":
-          Debug.WriteLine("prev was clicked.");
-          page = Int32.Parse(SessionPage) - 1;
+          Debug.WriteLine($"prev was clicked. {pageCount}");
+          page--;
           if (page <= 0)
           {
             break;
@@ -57,8 +60,13 @@ namespace TestWebApp.Pages
           break;
 
         case "next":
-          Debug.WriteLine("next was clicked.");
-          page = Int32.Parse(SessionPage) + 1;
+          Debug.WriteLine($"next was clicked. {pageCount}");
+          page++;
+          if (page > pageCount)
+          {
+            Pagination.Page = page - 1;
+            break;
+          }
           HttpContext.Session.SetString("page", page.ToString());
           Pagination.Page = page;
           //Page();
@@ -66,16 +74,20 @@ namespace TestWebApp.Pages
 
         case "last":
           Debug.WriteLine("last was clicked.");
+          HttpContext.Session.SetString("page", pageCount.ToString());
+          Pagination.Page = pageCount;
           break;
 
         default:
           page = 1;
           HttpContext.Session.SetString("page", page.ToString());
-          Pagination.Page = page;
+          Pagination.Page = _session["Page"];
           break;
       }
 
       _salesOrderService.LoadPage(Pagination, SearchParameter);
+      Debug.WriteLine($"exit. {Pagination.PageCount}, {Pagination.TotalRowCount}");
+      HttpContext.Session.SetString("totalRowCount", Pagination.TotalRowCount.ToString());
     }
 
     public void OnPost(string action)
@@ -86,7 +98,10 @@ namespace TestWebApp.Pages
       {
         case "search":
           Debug.WriteLine($"search was clicked. {SearchParameter.Keyword == null}");
+          HttpContext.Session.SetString("page", "1");
+          Pagination.Page = 1;
           _salesOrderService.LoadPage(Pagination, SearchParameter);
+          HttpContext.Session.SetString("totalRowCount", Pagination.TotalRowCount.ToString());
           break;
 
         case "excel":

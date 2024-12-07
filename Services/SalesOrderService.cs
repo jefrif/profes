@@ -106,8 +106,10 @@ namespace TestWebApp.Services
       int skip = (pagination.Page - 1) * pagination.PageLength;
       int i = skip;
       int count = 0;
+      int totCount = 0;
       var salesOrders = new List<SalesOrder>();
       DataTable dataTable = new DataTable();
+      DataTable dataTableCount = new DataTable();
 
       try
       {
@@ -115,13 +117,15 @@ namespace TestWebApp.Services
         using (SqlConnection connection = new SqlConnection(_connectionString))
         {
           connection.Open();
-          string query = $"SELECT so.Id, OrderNumber, OrderDate, CustomerId, c.Name "
-            + $"FROM SalesOrder AS so INNER JOIN Customer c ON so.CustomerId = c.Id ";
-
+          string fieldList = "so.Id, OrderNumber, OrderDate, CustomerId, c.Name ";
+          string query = $"SELECT " + fieldList
+            + $" FROM SalesOrder AS so INNER JOIN Customer c ON so.CustomerId = c.Id ";
+          string condition = "";
           bool included = false;
+
           if (parameter.OrderDate.HasValue)
           {
-            query += $" WHERE OrderDate = '{parameter.OrderDate.Value.Date.ToString("yyyy-MM-dd")}'";
+            condition += $" WHERE OrderDate = '{parameter.OrderDate.Value.Date.ToString("yyyy-MM-dd")}'";
             included = true;
           }
         
@@ -129,21 +133,29 @@ namespace TestWebApp.Services
           {
             if (included)
             {
-              query += $" AND (OrderNumber LIKE '%{parameter.Keyword}%' OR Name LIKE '%{parameter.Keyword}%') ";
+              condition += $" AND (OrderNumber LIKE '%{parameter.Keyword}%' OR Name LIKE '%{parameter.Keyword}%') ";
             }
             else
             {
-              query += $" WHERE (OrderNumber LIKE '%{parameter.Keyword}%' OR Name LIKE '%{parameter.Keyword}%') ";
+              condition += $" WHERE (OrderNumber LIKE '%{parameter.Keyword}%' OR Name LIKE '%{parameter.Keyword}%') ";
             }
           }
 
-          query += $" ORDER BY so.Id OFFSET {skip} ROWS FETCH NEXT 10 ROWS ONLY";
-          Debug.WriteLine($"quer={query}");
+          string orderSkip = $" ORDER BY so.Id OFFSET {skip} ROWS FETCH NEXT 10 ROWS ONLY";
+          ;
+          Debug.WriteLine($"quer={query + condition + orderSkip}");
 
-          using (SqlCommand command = new SqlCommand(query, connection))
+          using (SqlCommand command = new SqlCommand(query + condition + orderSkip, connection))
           using (SqlDataAdapter adapter = new SqlDataAdapter(command))
           {
             adapter.Fill(dataTable);
+          }
+
+          query = $"SELECT COUNT(so.Id) Count FROM SalesOrder AS so INNER JOIN Customer c ON so.CustomerId = c.Id ";
+          using (SqlCommand command = new SqlCommand(query + condition, connection))
+          using (SqlDataAdapter adapter = new SqlDataAdapter(command))
+          {
+            adapter.Fill(dataTableCount);
           }
         }
 
@@ -171,38 +183,54 @@ namespace TestWebApp.Services
             CustomerName = (string)row["Name"]
           });
         }
+        
+        foreach (DataRow row in dataTableCount.Rows)
+        {
+          totCount = (int)row["Count"];
+          break;
+        }
       }
-      catch (Exception)
+      catch (Exception ex)
       {
+        Debug.WriteLine (ex.Message);
       }
 
-        /*
-              while (count < pagination.PageLength && i < _salesOrdersData.Count)
+      /*
+            while (count < pagination.PageLength && i < _salesOrdersData.Count)
+            {
+              var order = _salesOrdersData[i];
+              bool included = true;
+              if (parameter.OrderDate.HasValue)
               {
-                var order = _salesOrdersData[i];
-                bool included = true;
-                if (parameter.OrderDate.HasValue)
-                {
-                  included = order.OrderDate.Date == parameter.OrderDate.Value.Date;
-                }
-
-                if (included && !String.IsNullOrEmpty(parameter.Keyword))
-                {
-                  included = order.OrderNumber.Contains(parameter.Keyword, StringComparison.OrdinalIgnoreCase);
-                }
-
-                if (included)
-                {
-                  count++;
-                  order.No = count;
-                  salesOrders.Add(order);
-                }
-                i++;
+                included = order.OrderDate.Date == parameter.OrderDate.Value.Date;
               }
-        */
-        _salesOrders = salesOrders;
-      pagination.TotalRowCount = _salesOrdersData.Count;
+
+              if (included && !String.IsNullOrEmpty(parameter.Keyword))
+              {
+                included = order.OrderNumber.Contains(parameter.Keyword, StringComparison.OrdinalIgnoreCase);
+              }
+
+              if (included)
+              {
+                count++;
+                order.No = count;
+                salesOrders.Add(order);
+              }
+              i++;
+            }
+
+      Debug.WriteLine($"LoadPage: {skip}, {totCount}");
+      if (skip > totCount)
+      {
+        pagination.Page--;
+        return;
+      }
+      */
+
+      _salesOrders = salesOrders;
+      pagination.TotalRowCount = totCount;
       pagination.RowCount = count;
+      pagination.PageCount = totCount / pagination.PageLength;
     }
 
     public SalesOrder GetSalesOrderById(int id)
@@ -245,7 +273,7 @@ namespace TestWebApp.Services
             No = 0,
             Id = (int)row["Id"],
             OrderNumber = (string)row["OrderNumber"],
-            OrderDate = (DateTime)row["OrderDate"],
+            OrderDate = ((DateTime)row["OrderDate"]).Date,
             CustomerId = (int)row["CustomerId"],
             CustomerName = ""
           };
@@ -261,7 +289,7 @@ namespace TestWebApp.Services
         return new SalesOrder
         {
           Id = 0,
-          OrderDate = DateTime.Now,
+          OrderDate = DateTime.Now.Date,
           OrderNumber = "",
           CustomerId = 0
         };
