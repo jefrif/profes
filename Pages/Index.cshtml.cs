@@ -18,6 +18,9 @@ namespace TestWebApp.Pages
 
     [BindProperty]
     public Pagination Pagination { get; set; }
+    
+    [BindProperty(SupportsGet = true)]
+    public bool ExcelReady { get; set; }
 
     public IndexModel(ILogger<IndexModel> logger, SalesOrderService service)
     {
@@ -30,6 +33,7 @@ namespace TestWebApp.Pages
     public void OnGet(string action)
     {
       SessionPage = HttpContext.Session.GetString("page") ?? "1";
+      ExcelReady = false;
       Debug.WriteLine($"OnGet: SessionPage={SessionPage}");
 
       switch (action)
@@ -76,26 +80,50 @@ namespace TestWebApp.Pages
 
     public void OnPost(string action)
     {
+      ExcelReady = false;
+
       switch (action)
       {
         case "search":
           Debug.WriteLine($"search was clicked. {SearchParameter.Keyword == null}");
           _salesOrderService.LoadPage(Pagination, SearchParameter);
+          break;
 
-          //if (String.IsNullOrEmpty(SearchParameter.Keyword))
-          //{
-          //  _salesOrderService.Refresh();
-
-          //}
-          //else
-          //{
-          //  _salesOrderService.Filter(SearchParameter);
-          //}
+        case "excel":
+          _filePath = _salesOrderService.SaveListToExcel();
+          ExcelReady = true;
+          Debug.WriteLine($"excel was clicked. {_filePath}");
           break;
 
         default:
           break;
       }
     }
+
+    private string _filePath;
+
+    public IActionResult OnGetDownloadFile()
+    {
+      // Replace with your file path or data source
+      //string filePath = "/downloads/export.xlsx";
+      ExcelReady = false;
+
+      if (System.IO.File.Exists(_salesOrderService.FilePath))
+      {
+        // Read the file into a byte array
+        var fileBytes = System.IO.File.ReadAllBytes(_salesOrderService.FilePath);
+
+        // Define the file name to download as
+        string fileName = "export.xlsx";
+
+        // Return the file as a download
+        return File(fileBytes, "application/octet-stream", fileName);
+      }
+      else
+      {
+        return NotFound(); // Return 404 if the file is not found
+      }
+    }
+
   }
 }

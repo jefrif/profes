@@ -69,9 +69,13 @@
     <!-- Left buttons -->
     <div class="left-buttons">
       <a asp-page="./OrderTransaction" asp-route-id="0" class="btn btn-red">Add New Data</a>
-      <a asp-page="./OrderTransaction" class="btn btn-blue">
-        <img src="~/excel.png" alt="Home Icon">Export To Excel
-      </a>
+      <button id="excel" name="action" value="excel" class="btn btn-blue">
+        <img src="~/excel.png" alt="Icon">&nbsp;&nbsp;Export To Excel
+      </button>
+      @if (Model.ExcelReady)
+      {
+        <a asp-page-handler="DownloadFile" class="btn btn-primary">Download Excel File</a>
+      }
     </div>
 
     <!-- Right button -->

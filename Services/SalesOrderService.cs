@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.SqlClient;
+using OfficeOpenXml;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
@@ -13,10 +14,13 @@ namespace TestWebApp.Services
     public readonly string _connectionString;
     private List<SalesOrder> _salesOrders = new List<SalesOrder>();
     private readonly List<SalesOrder> _salesOrdersData;
+    private readonly IWebHostEnvironment _webHostEnvironment;
+
+    public string FilePath { get; private set; }
 
     //private Lazy<List<SalesOrder>> _salesOrders;
 
-    public SalesOrderService()
+    public SalesOrderService(IWebHostEnvironment webHostEnvironment)
     {
       // Build configuration
       var configuration = new ConfigurationBuilder()
@@ -37,6 +41,7 @@ namespace TestWebApp.Services
       _salesOrders = InitializeSalesOrders();
       _salesOrdersData = _salesOrders;
       Debug.WriteLine($"SalesOrderService: {_salesOrders.Count}");
+      _webHostEnvironment = webHostEnvironment;
     }
 
     public List<SalesOrder> GetAll() => _salesOrders;
@@ -89,14 +94,6 @@ namespace TestWebApp.Services
         date = date.AddDays(1);
       }
       return salesOrders;
-    }
-
-    public void Refresh()
-    {
-      if (_salesOrdersData != null)
-      {
-        _salesOrders = _salesOrdersData;
-      }
     }
 
     public void LoadPage(Pagination pagination, SearchParameter parameter)
@@ -369,6 +366,55 @@ namespace TestWebApp.Services
         }
       }
     }
+
+    public string SaveListToExcel/*<T>(List<T> list, string filePath)*/()
+    {
+      ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+      using (var package = new ExcelPackage())
+      {
+        // Define the file path in wwwroot
+        var wwwrootPath = _webHostEnvironment.WebRootPath;
+        var fileName = "export.xlsx";
+        var filePath = Path.Combine(wwwrootPath, "downloads", fileName);
+
+        // Ensure the "downloads" folder exists
+        string? directory = Path.GetDirectoryName(filePath);
+        if (!Directory.Exists(directory))
+        {
+          Directory.CreateDirectory(directory ?? "C:\\Temp");
+        }
+
+        // Write content to the file
+        //await System.IO.File.WriteAllTextAsync(filePath, "This is a sample file for download.");
+
+        // Add a new worksheet
+        var worksheet = package.Workbook.Worksheets.Add("Sheet1");
+
+        // Add headers (property names)
+        var properties = typeof(SalesOrder).GetProperties();
+        for (int i = 0; i < properties.Length; i++)
+        {
+          worksheet.Cells[1, i + 1].Value = properties[i].Name;
+        }
+
+        // Add data
+        for (int row = 0; row < _salesOrders.Count; row++)
+        {
+          for (int col = 0; col < properties.Length; col++)
+          {
+            worksheet.Cells[row + 2, col + 1].Value = properties[col].GetValue(_salesOrders[row]);
+          }
+        }
+
+        // Save the Excel file
+        FileInfo fileInfo = new FileInfo(filePath);
+        package.SaveAs(fileInfo);
+        FilePath = filePath;
+        return $"{fileInfo.FullName}";
+      }
+    }
+
 
   }
 }
